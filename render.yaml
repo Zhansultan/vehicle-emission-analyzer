@@ -1,0 +1,45 @@
+# Render Blueprint - Auto-deploy configuration
+# https://render.com/docs/blueprint-spec
+
+services:
+  # Backend API
+  - type: web
+    name: emission-api
+    runtime: python
+    plan: starter
+    buildCommand: pip install -r requirements.txt && pip install 'setuptools<70.0'
+    startCommand: uvicorn app.main:app --host 0.0.0.0 --port $PORT
+    healthCheckPath: /health
+    envVars:
+      - key: DATABASE_URL
+        fromDatabase:
+          name: emission-db
+          property: connectionString
+      - key: PYTHON_VERSION
+        value: "3.11"
+      - key: PYTHONUNBUFFERED
+        value: "1"
+
+  # Frontend (Static Site)
+  - type: web
+    name: emission-frontend
+    runtime: static
+    buildCommand: cd frontend && npm ci && npm run build
+    staticPublishPath: frontend/dist
+    headers:
+      - path: /*
+        name: Cache-Control
+        value: public, max-age=31536000
+    routes:
+      - type: rewrite
+        source: /*
+        destination: /index.html
+    envVars:
+      - key: VITE_API_URL
+        sync: false  # Set manually after backend deploys
+
+databases:
+  - name: emission-db
+    plan: free
+    databaseName: emissions
+    user: postgres

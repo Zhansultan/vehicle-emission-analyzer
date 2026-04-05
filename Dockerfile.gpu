@@ -1,0 +1,65 @@
+# Vehicle Emission Analyzer - GPU-enabled Dockerfile
+# For NVIDIA GPU acceleration
+
+FROM nvidia/cuda:11.8-cudnn8-runtime-ubuntu22.04
+
+WORKDIR /app
+
+# Set environment variables
+ENV PYTHONDONTWRITEBYTECODE=1 \
+    PYTHONUNBUFFERED=1 \
+    PYTHONPATH=/app \
+    DEBIAN_FRONTEND=noninteractive
+
+# Install system dependencies
+RUN apt-get update && apt-get install -y --no-install-recommends \
+    python3.11 \
+    python3.11-venv \
+    python3-pip \
+    libglib2.0-0 \
+    libsm6 \
+    libxext6 \
+    libxrender-dev \
+    libgomp1 \
+    libgl1-mesa-glx \
+    libgstreamer1.0-0 \
+    ffmpeg \
+    && rm -rf /var/lib/apt/lists/* \
+    && apt-get clean
+
+# Create symlinks for python
+RUN ln -sf /usr/bin/python3.11 /usr/bin/python && \
+    ln -sf /usr/bin/pip3 /usr/bin/pip
+
+# Upgrade pip
+RUN pip install --no-cache-dir --upgrade pip
+
+# Install PyTorch with CUDA support
+RUN pip install --no-cache-dir \
+    torch torchvision --index-url https://download.pytorch.org/whl/cu118
+
+# Install other dependencies
+COPY requirements.txt .
+RUN pip install --no-cache-dir -r requirements.txt
+
+# Create non-root user
+RUN useradd --create-home --shell /bin/bash appuser
+
+# Create upload directory
+RUN mkdir -p /app/uploads && chown -R appuser:appuser /app
+
+# Copy application code
+COPY --chown=appuser:appuser app/ /app/app/
+
+# Switch to non-root user
+USER appuser
+
+# Expose port
+EXPOSE 8000
+
+# Health check
+HEALTHCHECK --interval=30s --timeout=10s --start-period=10s --retries=3 \
+    CMD python -c "import urllib.request; urllib.request.urlopen('http://localhost:8000/health')" || exit 1
+
+# Run the application
+CMD ["uvicorn", "app.main:app", "--host", "0.0.0.0", "--port", "8000"]

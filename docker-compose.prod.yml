@@ -1,0 +1,89 @@
+version: '3.8'
+
+services:
+  db:
+    image: postgres:15
+    container_name: emissions-db
+    environment:
+      POSTGRES_DB: emissions
+      POSTGRES_USER: postgres
+      POSTGRES_PASSWORD: ${DB_PASSWORD:-changeme_in_production}
+    volumes:
+      - postgres_data:/var/lib/postgresql/data
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U postgres -d emissions"]
+      interval: 10s
+      timeout: 5s
+      retries: 5
+    restart: always
+    networks:
+      - emission-network
+
+  app:
+    build:
+      context: .
+      dockerfile: Dockerfile
+    container_name: emission-api
+    environment:
+      - DATABASE_URL=postgres://postgres:${DB_PASSWORD:-changeme_in_production}@db:5432/emissions
+      - DEBUG=false
+      - YOLO_MODEL=yolov8n.pt
+      - FRAME_SKIP=5
+      - CONFIDENCE_THRESHOLD=0.5
+    volumes:
+      - ./uploads:/app/uploads
+      - yolo-models:/root/.cache/ultralytics
+    depends_on:
+      db:
+        condition: service_healthy
+    restart: always
+    networks:
+      - emission-network
+    deploy:
+      resources:
+        limits:
+          memory: 4G
+        reservations:
+          memory: 2G
+
+  frontend:
+    build:
+      context: ./frontend
+      dockerfile: Dockerfile
+      args:
+        VITE_API_URL: ${API_URL:-http://localhost:8000}
+    container_name: emission-frontend
+    ports:
+      - "80:80"
+    depends_on:
+      - app
+    restart: always
+    networks:
+      - emission-network
+
+  # Reverse proxy (optional - for SSL and routing)
+  nginx:
+    image: nginx:alpine
+    container_name: emission-proxy
+    ports:
+      - "443:443"
+      - "8080:80"
+    volumes:
+      - ./nginx-proxy.conf:/etc/nginx/nginx.conf:ro
+      - ./ssl:/etc/nginx/ssl:ro
+    depends_on:
+      - app
+      - frontend
+    restart: always
+    networks:
+      - emission-network
+    profiles:
+      - with-proxy
+
+volumes:
+  postgres_data:
+  yolo-models:
+
+networks:
+  emission-network:
+    driver: bridge

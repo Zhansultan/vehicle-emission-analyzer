@@ -1,0 +1,55 @@
+# Byte-compiled / optimized / DLL files
+__pycache__/
+*.py[cod]
+*$py.class
+
+# Virtual environment
+venv/
+.venv/
+env/
+ENV/
+
+# IDE
+.idea/
+.vscode/
+*.swp
+*.swo
+
+# Environment files
+.env
+.env.local
+
+# Uploads
+uploads/*
+!uploads/.gitkeep
+
+# YOLO models (downloaded at runtime)
+*.pt
+!requirements.txt
+
+# Logs
+*.log
+logs/
+
+# Test coverage
+.coverage
+htmlcov/
+.pytest_cache/
+
+# Distribution
+dist/
+build/
+*.egg-info/
+
+# Docker
+docker-compose.override.yml
+
+# SSL certificates
+ssl/
+
+# Migrations (generated)
+migrations/
+
+# OS files
+.DS_Store
+Thumbs.db

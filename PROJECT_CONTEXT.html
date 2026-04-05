@@ -1,0 +1,233 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Vehicle Emission Analyzer - Project Context</title>
+    <style>
+        body { font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif; line-height: 1.6; max-width: 900px; margin: 0 auto; padding: 20px; color: #333; }
+        h1 { color: #1a73e8; border-bottom: 2px solid #1a73e8; padding-bottom: 10px; }
+        h2 { color: #0d47a1; margin-top: 30px; border-bottom: 1px solid #ddd; padding-bottom: 5px; }
+        h3 { color: #1565c0; }
+        table { border-collapse: collapse; width: 100%; margin: 15px 0; }
+        th, td { border: 1px solid #ddd; padding: 10px; text-align: left; }
+        th { background: #f5f5f5; }
+        code { background: #f5f5f5; padding: 2px 6px; border-radius: 3px; font-family: 'Monaco', 'Consolas', monospace; }
+        pre { background: #2d2d2d; color: #f8f8f2; padding: 15px; border-radius: 5px; overflow-x: auto; }
+        pre code { background: none; color: inherit; padding: 0; }
+        .highlight { background: #fff3cd; padding: 10px; border-left: 4px solid #ffc107; margin: 15px 0; }
+        hr { border: none; border-top: 1px solid #ddd; margin: 30px 0; }
+        @media print { body { max-width: 100%; } pre { white-space: pre-wrap; } }
+    </style>
+</head>
+<body>
+<h1>Vehicle Emission Analyzer - Project Context Summary</h1>
+<p><strong>Date:</strong> 2026-04-05<br>
+<strong>Project Path:</strong> <code>/home/zhabenov/university/kmp/diploma/vehicle-emission-analyzer</code></p>
+<hr>
+
+<h2>1. Project Overview</h2>
+<p>A FastAPI backend application that:</p>
+<ul>
+<li>Detects vehicles in uploaded videos using <strong>YOLOv8</strong></li>
+<li>Tracks vehicles across frames using <strong>DeepSORT</strong></li>
+<li>Classifies vehicles (sedan, SUV, truck, bus, bike)</li>
+<li>Calculates CO2 emissions based on vehicle types</li>
+<li><strong>NEW:</strong> Stores results with geolocation in PostgreSQL</li>
+<li><strong>NEW:</strong> Provides a React frontend with map visualization</li>
+</ul>
+
+<h2>2. Changes Made in This Session</h2>
+
+<h3>2.1 Backend Changes</h3>
+<h4>Dependencies Added (requirements.txt)</h4>
+<pre><code>tortoise-orm[asyncpg]==0.21.7
+aerich==0.7.2</code></pre>
+
+<h4>New Files Created</h4>
+<table>
+<tr><th>File</th><th>Description</th></tr>
+<tr><td><code>app/models/db_models.py</code></td><td>Tortoise ORM model AnalysisResult</td></tr>
+<tr><td><code>pyproject.toml</code></td><td>Aerich migration config</td></tr>
+<tr><td><code>aerich.ini</code></td><td>Aerich migration config</td></tr>
+<tr><td><code>migrations/.gitkeep</code></td><td>Migrations directory</td></tr>
+<tr><td><code>.env</code></td><td>Local environment variables</td></tr>
+</table>
+
+<h4>Modified Files</h4>
+<table>
+<tr><th>File</th><th>Changes</th></tr>
+<tr><td><code>app/config.py</code></td><td>Added database_url setting</td></tr>
+<tr><td><code>.env.example</code></td><td>Added DATABASE_URL</td></tr>
+<tr><td><code>app/main.py</code></td><td>Added Tortoise ORM initialization, updated CORS</td></tr>
+<tr><td><code>app/models/schemas.py</code></td><td>Added AnalysisResultResponse, MapPointResponse</td></tr>
+<tr><td><code>app/models/__init__.py</code></td><td>Export new schemas and db model</td></tr>
+<tr><td><code>app/api/routes.py</code></td><td>Modified /analyze-video, added /map-points</td></tr>
+<tr><td><code>docker-compose.yml</code></td><td>Added db, frontend services</td></tr>
+</table>
+
+<h4>Database Model (app/models/db_models.py)</h4>
+<pre><code>class AnalysisResult(Model):
+    id = fields.IntField(pk=True)
+    latitude = fields.FloatField()
+    longitude = fields.FloatField()
+    recorded_at = fields.DatetimeField()
+    created_at = fields.DatetimeField(auto_now_add=True)
+    total_vehicles = fields.IntField()
+    total_co2 = fields.FloatField()
+    vehicles_json = fields.JSONField()
+    statistics_json = fields.JSONField()</code></pre>
+
+<h4>API Endpoints</h4>
+<table>
+<tr><th>Endpoint</th><th>Method</th><th>Changes</th></tr>
+<tr><td><code>/analyze-video</code></td><td>POST</td><td>Now accepts latitude, longitude, recorded_at form fields; saves to DB; returns id</td></tr>
+<tr><td><code>/map-points</code></td><td>GET</td><td><strong>NEW</strong> - Returns all analysis results for map; supports date_from, date_to filters</td></tr>
+</table>
+
+<h3>2.2 Frontend Created (frontend/)</h3>
+<p>Complete React + TypeScript + Vite application.</p>
+
+<h4>Structure</h4>
+<pre><code>frontend/
+├── package.json
+├── vite.config.ts
+├── tsconfig.json
+├── index.html
+├── .env.example
+├── .gitignore
+├── public/
+│   └── vite.svg
+└── src/
+    ├── main.tsx
+    ├── App.tsx
+    ├── App.css
+    ├── index.css
+    ├── vite-env.d.ts
+    ├── declarations.d.ts      # leaflet.heat types
+    ├── api/
+    │   └── client.ts          # axios API client
+    ├── components/
+    │   ├── index.ts
+    │   ├── UploadForm.tsx     # Video upload + location picker
+    │   ├── MapView.tsx        # Heatmap visualization
+    │   └── DateFilter.tsx     # Date range filter
+    └── types/
+        └── index.ts           # TypeScript interfaces</code></pre>
+
+<h4>Features</h4>
+<ul>
+<li>Two-panel layout (35% left / 65% right)</li>
+<li><strong>UploadForm:</strong> File input, embedded map for location picking, datetime input</li>
+<li><strong>MapView:</strong> Leaflet map with heatmap layer (leaflet.heat) + circle markers with tooltips</li>
+<li><strong>DateFilter:</strong> Date range filtering for map points</li>
+<li>Default center: Almaty, Kazakhstan (43.238949, 76.889709)</li>
+</ul>
+
+<h3>2.3 Docker Configuration (docker-compose.yml)</h3>
+<p>Three services:</p>
+<ol>
+<li><strong>db</strong> - PostgreSQL 15 (port 5432)</li>
+<li><strong>app</strong> - FastAPI backend (port 8000), depends on db</li>
+<li><strong>frontend</strong> - Node 20 running Vite dev server (port 5173)</li>
+</ol>
+
+<h2>3. Environment Configuration</h2>
+
+<h4>Local Development (.env)</h4>
+<pre><code>DATABASE_URL=postgres://postgres:postgres@localhost:5432/emissions</code></pre>
+
+<h4>Docker (set in docker-compose.yml)</h4>
+<pre><code>DATABASE_URL=postgres://postgres:postgres@db:5432/emissions</code></pre>
+
+<h4>Frontend (.env.example)</h4>
+<pre><code>VITE_API_URL=http://localhost:8000</code></pre>
+
+<h2>4. Issues Resolved</h2>
+
+<div class="highlight">
+<strong>Issue 1: Database Connection Error</strong><br>
+<strong>Error:</strong> <code>socket.gaierror: [Errno -2] Name or service not known</code><br>
+<strong>Cause:</strong> Default DATABASE_URL used <code>db</code> hostname (Docker) but running locally<br>
+<strong>Solution:</strong> Created <code>.env</code> file with <code>DATABASE_URL=postgres://postgres:postgres@localhost:5432/emissions</code>
+</div>
+
+<div class="highlight">
+<strong>Issue 2: npm Installation Conflict (Arch Linux)</strong><br>
+<strong>Error:</strong> conflicting files with libgcc, libstdc++<br>
+<strong>Solution:</strong> <code>sudo pacman -S npm --overwrite '*'</code>
+</div>
+
+<div class="highlight">
+<strong>Issue 3: pkg_resources Module Not Found</strong><br>
+<strong>Error:</strong> <code>ModuleNotFoundError: No module named 'pkg_resources'</code><br>
+<strong>Cause:</strong> setuptools 82.0.1 removed pkg_resources (Python 3.14 compatibility)<br>
+<strong>Solution:</strong> Downgrade setuptools: <code>pip install 'setuptools&lt;70.0'</code>
+</div>
+
+<h2>5. How to Run</h2>
+
+<h3>Option A: Local Development</h3>
+<ol>
+<li>Start PostgreSQL (via Docker):
+<pre><code>docker-compose up -d db</code></pre></li>
+<li>Activate venv and run backend:
+<pre><code>source venv/bin/activate
+uvicorn app.main:app --reload --host 0.0.0.0 --port 8000</code></pre></li>
+<li>Run frontend:
+<pre><code>cd frontend
+npm install
+npm run dev</code></pre></li>
+<li>Access:
+<ul>
+<li>Backend API: <a href="http://localhost:8000/docs">http://localhost:8000/docs</a></li>
+<li>Frontend: <a href="http://localhost:5173">http://localhost:5173</a></li>
+</ul></li>
+</ol>
+
+<h3>Option B: Full Docker</h3>
+<pre><code>docker-compose up --build</code></pre>
+
+<h2>6. Current State</h2>
+<ul>
+<li><strong>Backend:</strong> Fully implemented with PostgreSQL integration</li>
+<li><strong>Frontend:</strong> Fully implemented, ready for testing</li>
+<li><strong>Database:</strong> Schema auto-generated by Tortoise ORM on startup</li>
+<li><strong>Last tested:</strong> Video upload was working (after setuptools fix)</li>
+</ul>
+
+<h2>7. Key File Locations</h2>
+<table>
+<tr><th>Purpose</th><th>Path</th></tr>
+<tr><td>FastAPI entry</td><td><code>app/main.py</code></td></tr>
+<tr><td>API routes</td><td><code>app/api/routes.py</code></td></tr>
+<tr><td>DB models</td><td><code>app/models/db_models.py</code></td></tr>
+<tr><td>Pydantic schemas</td><td><code>app/models/schemas.py</code></td></tr>
+<tr><td>Config</td><td><code>app/config.py</code></td></tr>
+<tr><td>Frontend app</td><td><code>frontend/src/App.tsx</code></td></tr>
+<tr><td>API client</td><td><code>frontend/src/api/client.ts</code></td></tr>
+<tr><td>Map component</td><td><code>frontend/src/components/MapView.tsx</code></td></tr>
+<tr><td>Upload form</td><td><code>frontend/src/components/UploadForm.tsx</code></td></tr>
+</table>
+
+<h2>8. Technology Stack</h2>
+<table>
+<tr><th>Layer</th><th>Technology</th></tr>
+<tr><td>Backend Framework</td><td>FastAPI</td></tr>
+<tr><td>Database</td><td>PostgreSQL 15</td></tr>
+<tr><td>ORM</td><td>Tortoise ORM</td></tr>
+<tr><td>Migrations</td><td>Aerich</td></tr>
+<tr><td>Object Detection</td><td>YOLOv8 (ultralytics)</td></tr>
+<tr><td>Object Tracking</td><td>DeepSORT</td></tr>
+<tr><td>Frontend</td><td>React 18 + TypeScript</td></tr>
+<tr><td>Build Tool</td><td>Vite</td></tr>
+<tr><td>Maps</td><td>Leaflet + react-leaflet</td></tr>
+<tr><td>Heatmap</td><td>leaflet.heat</td></tr>
+<tr><td>HTTP Client</td><td>Axios</td></tr>
+<tr><td>Containerization</td><td>Docker + docker-compose</td></tr>
+</table>
+
+<hr>
+<p><em>This document was generated to preserve session context for future continuation.</em></p>
+</body>
+</html>
