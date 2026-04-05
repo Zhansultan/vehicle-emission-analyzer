@@ -42,4 +42,3 @@ databases:
   - name: postgres
     plan: free
     databaseName: emissions
-    user: postgres
