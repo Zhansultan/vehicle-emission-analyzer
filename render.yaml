@@ -39,7 +39,7 @@ services:
         sync: false  # Set manually after backend deploys
 
 databases:
-  - name: emission-db
+  - name: emission
     plan: free
     databaseName: emissions
     user: postgres
