@@ -56,7 +56,14 @@ export async function getMapPoints(
 
     const url = `/map-points${params.toString() ? `?${params.toString()}` : ''}`;
     const response = await apiClient.get<MapPointResponse[]>(url);
-    return response.data;
+
+    // Ensure we always return an array
+    const data = response.data;
+    if (!Array.isArray(data)) {
+      console.warn('API returned non-array for map-points:', data);
+      return [];
+    }
+    return data;
   } catch (error) {
     handleApiError(error);
   }
