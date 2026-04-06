@@ -17,10 +17,12 @@ function App() {
     setError(null);
     try {
       const points = await getMapPoints(dateFrom, dateTo);
-      setMapPoints(points);
+      // Ensure we always set an array
+      setMapPoints(Array.isArray(points) ? points : []);
     } catch (err) {
       const message = err instanceof Error ? err.message : 'Failed to load map points';
       setError(message);
+      setMapPoints([]); // Reset to empty array on error
     } finally {
       setLoading(false);
     }
