@@ -18,19 +18,22 @@ function HeatmapLayer({ points }: HeatmapLayerProps) {
   const map = useMap();
   const heatLayerRef = useRef<L.Layer | null>(null);
 
+  // Ensure points is always an array
+  const safePoints = Array.isArray(points) ? points : [];
+
   useEffect(() => {
     // Remove existing heat layer if it exists
     if (heatLayerRef.current) {
       map.removeLayer(heatLayerRef.current);
     }
 
-    if (points.length === 0) return;
+    if (safePoints.length === 0) return;
 
     // Find max CO2 for normalization
-    const maxCO2 = Math.max(...points.map((p) => p.total_co2));
+    const maxCO2 = Math.max(...safePoints.map((p) => p.total_co2));
 
     // Create heat data: [lat, lng, intensity]
-    const heatData: [number, number, number][] = points.map((point) => [
+    const heatData: [number, number, number][] = safePoints.map((point) => [
       point.latitude,
       point.longitude,
       point.total_co2 / maxCO2, // Normalize intensity
@@ -59,12 +62,15 @@ function HeatmapLayer({ points }: HeatmapLayerProps) {
         map.removeLayer(heatLayerRef.current);
       }
     };
-  }, [map, points]);
+  }, [map, safePoints]);
 
   return null;
 }
 
 export function MapView({ points }: MapViewProps) {
+  // Ensure points is always an array
+  const safePoints = Array.isArray(points) ? points : [];
+
   // Format date for tooltip display
   const formatDate = (dateStr: string) => {
     try {
@@ -89,10 +95,10 @@ export function MapView({ points }: MapViewProps) {
           />
 
           {/* Heatmap Layer */}
-          <HeatmapLayer points={points} />
+          <HeatmapLayer points={safePoints} />
 
           {/* Circle Markers with Tooltips */}
-          {points.map((point) => (
+          {safePoints.map((point) => (
             <CircleMarker
               key={point.id}
               center={[point.latitude, point.longitude]}
@@ -127,11 +133,11 @@ export function MapView({ points }: MapViewProps) {
       </div>
 
       {/* Stats Summary */}
-      {points.length > 0 && (
+      {safePoints.length > 0 && (
         <div className="map-stats">
-          <p>Showing {points.length} analysis point{points.length !== 1 ? 's' : ''}</p>
+          <p>Showing {safePoints.length} analysis point{safePoints.length !== 1 ? 's' : ''}</p>
           <p>
-            Total CO2: {points.reduce((sum, p) => sum + p.total_co2, 0).toFixed(2)} g
+            Total CO2: {safePoints.reduce((sum, p) => sum + p.total_co2, 0).toFixed(2)} g
           </p>
         </div>
       )}
