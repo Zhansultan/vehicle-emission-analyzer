@@ -89,8 +89,15 @@ app.add_middleware(
 app.include_router(router, tags=["Analysis"])
 
 # Configure Tortoise ORM
+# Convert postgresql:// to postgres:// for Tortoise ORM compatibility (Render uses postgresql://)
+def get_db_url() -> str:
+    url = settings.database_url
+    if url.startswith("postgresql://"):
+        url = url.replace("postgresql://", "postgres://", 1)
+    return url
+
 TORTOISE_ORM = {
-    "connections": {"default": settings.database_url},
+    "connections": {"default": get_db_url()},
     "apps": {
         "models": {
             "models": ["app.models.db_models", "aerich.models"],
