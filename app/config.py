@@ -19,6 +19,17 @@ class Settings(BaseSettings):
     # Database
     database_url: str = "postgres://postgres:postgres@db:5432/emissions"
 
+    @property
+    def db_url(self) -> str:
+        """Get database URL compatible with Tortoise ORM.
+
+        Render uses 'postgresql://' but Tortoise ORM expects 'postgres://'.
+        """
+        url = self.database_url
+        if url.startswith("postgresql://"):
+            url = url.replace("postgresql://", "postgres://", 1)
+        return url
+
     # File Storage
     upload_dir: Path = Path("uploads")
     max_file_size_mb: int = 500
